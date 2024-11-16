@@ -1,5 +1,12 @@
 extern crate napi;
 
+#[cfg(not(target_env = "msvc"))]
+use tikv_jemallocator::Jemalloc;
+
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 #[macro_use]
 extern crate napi_derive;
 
@@ -16,7 +23,8 @@ use fast_magic_string::{
 mod types;
 
 use types::{
-  JsGenerateMapOptions, JsIndentOptions, JsMagicStringOptions, JsOverwriteOptions, JsRegExp,
+  JsDecodedMap, JsGenerateMapOptions, JsIndentOptions, JsMagicStringOptions, JsOverwriteOptions,
+  JsRegExp, JsSourceMap,
 };
 
 mod error;
@@ -60,21 +68,26 @@ impl JsMagicString {
   }
 
   #[napi]
-  pub fn generate_map(&mut self, options: Option<JsGenerateMapOptions>) -> Result<()> {
+  pub fn generate_map(&mut self, options: Option<JsGenerateMapOptions>) -> Result<JsSourceMap> {
     let map = self
       .0
       .generate_map(options.map(|x| x.into()))
-      .map_err(to_napi_error)?;
-    Ok(())
+      .map_err(to_napi_error)?
+      .into();
+    Ok(map)
   }
 
   #[napi]
-  pub fn generate_decoded_map(&mut self, options: Option<JsGenerateMapOptions>) -> Result<()> {
-    let map = self
+  pub fn generate_decoded_map(
+    &mut self,
+    options: Option<JsGenerateMapOptions>,
+  ) -> Result<JsDecodedMap> {
+    let decoded_map = self
       .0
       .generate_decoded_map(options.map(|x| x.into()))
-      .map_err(to_napi_error)?;
-    Ok(())
+      .map_err(to_napi_error)?
+      .into();
+    Ok(decoded_map)
   }
 
   #[napi]

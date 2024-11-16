@@ -14,6 +14,9 @@ napi = { version = "2.12.2", default-features = false, features = ["napi4"] }
 napi-derive = "2.12.2"
 fast_magic_string = { path = "../core" }
 
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+tikv-jemallocator = "0.5"
+
 [build-dependencies]
 napi-build = "2.0.1"
 

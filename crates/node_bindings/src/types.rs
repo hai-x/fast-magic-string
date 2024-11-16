@@ -1,6 +1,6 @@
 use fast_magic_string::{
-  fast_magic_string_sourcemap::SourceMap, GenerateMapOptions, IndentOptions, MagicStringOptions,
-  OverwriteOptions,
+  fast_magic_string_sourcemap::{DecodedMap, SourceMap},
+  GenerateMapOptions, IndentOptions, MagicStringOptions, OverwriteOptions,
 };
 
 #[napi(object)]
@@ -78,4 +78,58 @@ impl From<JsOverwriteOptions> for OverwriteOptions {
 pub struct JsRegExp {
   pub global: Option<bool>,
   pub rule: String,
+}
+
+#[napi(object)]
+pub struct JsSourceMap {
+  pub version: u8,
+  pub file: Option<String>,
+  pub source_root: Option<String>,
+  pub sources: Vec<String>,
+  pub sources_content: Option<Vec<String>>,
+  pub names: Vec<String>,
+  pub mappings: String,
+  pub x_google_ignoreList: Option<Vec<u8>>,
+}
+
+impl From<SourceMap> for JsSourceMap {
+  fn from(source_map: SourceMap) -> Self {
+    JsSourceMap {
+      version: source_map.version,
+      file: source_map.file,
+      source_root: source_map.source_root,
+      sources: source_map.sources,
+      sources_content: source_map.sources_content,
+      names: source_map.names,
+      mappings: source_map.mappings,
+      x_google_ignoreList: source_map.x_google_ignoreList,
+    }
+  }
+}
+
+#[napi(object)]
+pub struct JsDecodedMap {
+  pub version: u8,
+  pub file: Option<String>,
+  pub source_root: Option<String>,
+  pub sources: Vec<String>,
+  pub sources_content: Option<Vec<String>>,
+  pub names: Vec<String>,
+  pub mappings: Vec<Vec<Vec<i64>>>,
+  pub x_google_ignoreList: Option<Vec<u8>>,
+}
+
+impl From<DecodedMap> for JsDecodedMap {
+  fn from(decoded_map: DecodedMap) -> Self {
+    JsDecodedMap {
+      version: decoded_map.version,
+      file: decoded_map.file,
+      source_root: decoded_map.source_root,
+      sources: decoded_map.sources,
+      sources_content: decoded_map.sources_content,
+      names: decoded_map.names,
+      mappings: decoded_map.mappings,
+      x_google_ignoreList: decoded_map.x_google_ignoreList,
+    }
+  }
 }

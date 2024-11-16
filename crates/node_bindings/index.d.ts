@@ -28,6 +28,26 @@ export interface JsRegExp {
   global?: boolean
   rule: string
 }
+export interface JsSourceMap {
+  version: number
+  file?: string
+  sourceRoot?: string
+  sources: Array<string>
+  sourcesContent?: Array<string>
+  names: Array<string>
+  mappings: string
+  xGoogleIgnoreList?: Array<number>
+}
+export interface JsDecodedMap {
+  version: number
+  file?: string
+  sourceRoot?: string
+  sources: Array<string>
+  sourcesContent?: Array<string>
+  names: Array<string>
+  mappings: Array<Array<Array<number>>>
+  xGoogleIgnoreList?: Array<number>
+}
 export type JsMagicString = MagicString
 export declare class MagicString {
   constructor(str: string, options?: JsMagicStringOptions | undefined | null)
@@ -35,12 +55,9 @@ export declare class MagicString {
   append(input: string): this
   appendLeft(index: number, input: string): this
   clone(): MagicString
-  generateMap(options?: JsGenerateMapOptions | undefined | null): void
-  generateDecodedMap(options?: JsGenerateMapOptions | undefined | null): void
-  indent(
-    indentStr?: string | undefined | null,
-    options?: JsIndentOptions | undefined | null
-  ): this
+  generateMap(options?: JsGenerateMapOptions | undefined | null): JsSourceMap
+  generateDecodedMap(options?: JsGenerateMapOptions | undefined | null): JsDecodedMap
+  indent(indentStr?: string | undefined | null, options?: JsIndentOptions | undefined | null): this
   insert(): void
   insertLeft(index: number, input: string): this
   appendRight(index: number, input: string): this
@@ -54,33 +71,14 @@ export declare class MagicString {
   trimEnd(charType?: string | undefined | null): this
   move(start: number, end: number, index: number): this
   remove(start: number, end: number): this
-  overwrite(
-    start: number,
-    end: number,
-    content: string,
-    options?: JsOverwriteOptions | undefined | null
-  ): this
-  update(
-    start: number,
-    end: number,
-    content: string,
-    options?: JsOverwriteOptions | undefined | null
-  ): this
+  overwrite(start: number, end: number, content: string, options?: JsOverwriteOptions | undefined | null): this
+  update(start: number, end: number, content: string, options?: JsOverwriteOptions | undefined | null): this
   isEmpty(): boolean
   toString(): string
   hasChanged(): boolean
   snip(start: number, end: number): MagicString
-  slice(
-    start?: number | undefined | null,
-    end?: number | undefined | null
-  ): string
+  slice(start?: number | undefined | null, end?: number | undefined | null): string
   reset(start: number, end: number): this
-  replace(
-    searchValue: string | JsRegExp,
-    replacement: string | ((...args: any[]) => any)
-  ): this
-  replaceAll(
-    searchValue: string | JsRegExp,
-    replacement: string | ((...args: any[]) => any)
-  ): this
+  replace(searchValue: string | JsRegExp, replacement: string | ((...args: any[]) => any)): this
+  replaceAll(searchValue: string | JsRegExp, replacement: string | ((...args: any[]) => any)): this
 }

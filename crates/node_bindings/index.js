@@ -17,10 +17,7 @@ function isMusl() {
   // For Node 10
   if (!process.report || typeof process.report.getReport !== 'function') {
     try {
-      const lddPath = require('child_process')
-        .execSync('which ldd')
-        .toString()
-        .trim()
+      const lddPath = require('child_process').execSync('which ldd').toString().trim()
       return readFileSync(lddPath, 'utf8').includes('musl')
     } catch (e) {
       return true
@@ -35,9 +32,7 @@ switch (platform) {
   case 'android':
     switch (arch) {
       case 'arm64':
-        localFileExisted = existsSync(
-          join(__dirname, 'node_bindings.android-arm64.node')
-        )
+        localFileExisted = existsSync(join(__dirname, 'node_bindings.android-arm64.node'))
         try {
           if (localFileExisted) {
             nativeBinding = require('./node_bindings.android-arm64.node')
@@ -49,9 +44,7 @@ switch (platform) {
         }
         break
       case 'arm':
-        localFileExisted = existsSync(
-          join(__dirname, 'node_bindings.android-arm-eabi.node')
-        )
+        localFileExisted = existsSync(join(__dirname, 'node_bindings.android-arm-eabi.node'))
         try {
           if (localFileExisted) {
             nativeBinding = require('./node_bindings.android-arm-eabi.node')
@@ -115,9 +108,7 @@ switch (platform) {
     }
     break
   case 'darwin':
-    localFileExisted = existsSync(
-      join(__dirname, 'node_bindings.darwin-universal.node')
-    )
+    localFileExisted = existsSync(join(__dirname, 'node_bindings.darwin-universal.node'))
     try {
       if (localFileExisted) {
         nativeBinding = require('./node_bindings.darwin-universal.node')
@@ -128,9 +119,7 @@ switch (platform) {
     } catch {}
     switch (arch) {
       case 'x64':
-        localFileExisted = existsSync(
-          join(__dirname, 'node_bindings.darwin-x64.node')
-        )
+        localFileExisted = existsSync(join(__dirname, 'node_bindings.darwin-x64.node'))
         try {
           if (localFileExisted) {
             nativeBinding = require('./node_bindings.darwin-x64.node')
@@ -163,9 +152,7 @@ switch (platform) {
     if (arch !== 'x64') {
       throw new Error(`Unsupported architecture on FreeBSD: ${arch}`)
     }
-    localFileExisted = existsSync(
-      join(__dirname, 'node_bindings.freebsd-x64.node')
-    )
+    localFileExisted = existsSync(join(__dirname, 'node_bindings.freebsd-x64.node'))
     try {
       if (localFileExisted) {
         nativeBinding = require('./node_bindings.freebsd-x64.node')

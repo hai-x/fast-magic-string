@@ -3,9 +3,9 @@ import MagicString from 'magic-string'
 
 const validate = handle => {
   const res = []
-    ;[RustMagicString, MagicString].map(Cons => {
-      res.push(handle(Cons))
-    })
+  ;[RustMagicString, MagicString].map(Cons => {
+    res.push(handle(Cons))
+  })
   expect(res[0]).toBe(res[1])
 }
 
@@ -667,7 +667,7 @@ describe('MagicString', () => {
             rule: '1',
             global: true
           },
-          () => { }
+          () => {}
         )
       ).toThrow('`replacement` argument do not supports RegExp replacerFn now')
     })
@@ -843,7 +843,7 @@ describe('MagicString', () => {
             rule: '1',
             global: true
           },
-          () => { }
+          () => {}
         )
       ).toThrow(
         'TypeError: `replacement` argument do not supports RegExp replacerFn now'
