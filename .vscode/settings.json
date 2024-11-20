@@ -1,4 +1,13 @@
 {
   "cSpell.words": ["outro"],
-  "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] }
+  "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] },
+  "editor.formatOnSave": true,
+  "prettier.enable": true,
+  "[javascript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  }
 }

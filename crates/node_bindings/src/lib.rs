@@ -1,11 +1,5 @@
+extern crate fast_magic_string_malloc;
 extern crate napi;
-
-#[cfg(not(target_env = "msvc"))]
-use tikv_jemallocator::Jemalloc;
-
-#[cfg(not(target_env = "msvc"))]
-#[global_allocator]
-static GLOBAL: Jemalloc = Jemalloc;
 
 #[macro_use]
 extern crate napi_derive;
@@ -17,7 +11,6 @@ extern crate fast_magic_string;
 
 use fast_magic_string::{
   error::{Error, MsErrType},
-  fast_magic_string_sourcemap::{DecodedMap, SourceMap},
   MagicString,
 };
 mod types;
