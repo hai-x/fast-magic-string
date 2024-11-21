@@ -1,0 +1,31 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+    types: [opened, synchronize]
+    paths-ignore:
+      - '**/*.md'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run test
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: moonrepo/setup-rust@v1
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
+        with:
+          cache: pnpm
+          node-version-file: .nvmrc
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile
+      - name: Build
+        run: pnpm build
+      - name: Run tests
+        run: pnpm test
