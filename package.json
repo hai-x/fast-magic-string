@@ -3,17 +3,22 @@
   "scripts": {
     "build": "pnpm -C crates/node_bindings build",
     "build:debug": "pnpm -C crates/node_bindings build:debug",
-    "test": "cross-env NODE_OPTIONS='--experimental-vm-modules' jest --config ./jest.config.js",
-    "bench": "node benches/bench.mjs"
+    "test": "pnpm test:jest",
+    "test:jest": "cross-env NODE_OPTIONS='--experimental-vm-modules' jest --config ./jest.config.js",
+    "test:vitest": "vitest basic",
+    "bench": "node benches/code-speed.js"
   },
   "devDependencies": {
-    "fast-magic-string": "workspace:^0.0.0",
-    "@codspeed/benchmark.js-plugin": "^3.1.1",
-    "benchmark": "^2.1.4",
+    "@codspeed/tinybench-plugin": "^4.0.0",
     "cross-env": "^7.0.3",
+    "fast-magic-string": "workspace:*",
     "jest": "^29.7.0",
     "magic-string": "^0.30.11",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "source-map-js": "^1.2.1",
+    "source-map-support": "^0.5.21",
+    "tinybench": "^2.9.0",
+    "vitest": "^2.1.8"
   },
   "prettier": {
     "semi": false,

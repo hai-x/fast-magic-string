@@ -1,7 +1,8 @@
 use fast_magic_string::{
-  fast_magic_string_sourcemap::{DecodedMap, SourceMap},
-  GenerateMapOptions, IndentOptions, MagicStringOptions, OverwriteOptions,
+  fms_sourcemap::{DecodedMap, SourceMap},
+  GenerateMapOptions, IndentExclusionRanges, IndentOptions, MagicStringOptions, OverwriteOptions,
 };
+use napi::Either;
 
 #[napi(object)]
 pub struct JsIndentOptions {
@@ -19,17 +20,27 @@ impl From<JsIndentOptions> for IndentOptions {
 }
 
 #[napi(object)]
+#[derive(Clone)]
 pub struct JsMagicStringOptions {
   pub filename: Option<String>,
-  pub indent_exclusion_ranges: Option<Vec<u32>>,
+  pub indent_exclusion_ranges: Option<Either<Vec<u32>, Vec<Vec<u32>>>>,
   pub ignore_list: Option<bool>,
 }
 
 impl From<JsMagicStringOptions> for MagicStringOptions {
   fn from(js_magic_string_options: JsMagicStringOptions) -> Self {
+    let indent_exclusion_ranges =
+      if let Some(indent_exclusion_ranges) = js_magic_string_options.indent_exclusion_ranges {
+        match indent_exclusion_ranges {
+          Either::A(v) => Some(IndentExclusionRanges::Single(v)),
+          Either::B(v) => Some(IndentExclusionRanges::Nested(v)),
+        }
+      } else {
+        None
+      };
     MagicStringOptions {
       filename: js_magic_string_options.filename,
-      indent_exclusion_ranges: js_magic_string_options.indent_exclusion_ranges,
+      indent_exclusion_ranges,
       ignore_list: js_magic_string_options.ignore_list,
     }
   }
@@ -75,7 +86,7 @@ impl From<JsOverwriteOptions> for OverwriteOptions {
 }
 
 #[napi(object)]
-pub struct JsRegExp {
+pub struct FmsRegex {
   pub global: Option<bool>,
   pub rule: String,
 }

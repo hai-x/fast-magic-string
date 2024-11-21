@@ -5,27 +5,28 @@ pub mod locator;
 pub mod result;
 pub mod utils;
 
-use std::{cell::RefCell, collections::HashMap, rc::Rc, str, vec};
-
 use crate::{
-  error::{Error, MsErrType},
-  fast_magic_string_sourcemap::{
+  error::{Error, FmsErrType},
+  fms_sourcemap::{
     bit_set::BitSet,
     mappings::{MappingsFacade, SOURCE_INDEX},
     DecodedMap, SourceMap, SOURCEMAP_VERSION,
   },
   locator::Locator,
   result::Result,
-  utils::{
-    _normalize_range, find_char_index_of_substring, get_relative_path, guess_indent, match_all,
-    slice_string,
-  },
+  utils::{guess_indent, match_all, normalize_range, slice_string},
 };
-pub use fast_magic_string_sourcemap;
+
+#[macro_use(concat_string)]
+extern crate fms_utils;
+
+use std::{cell::RefCell, collections::HashMap, rc::Rc, str, vec};
+
+pub use fms_sourcemap;
 
 pub mod chunk;
 use chunk::Chunk;
-
+use fms_utils::path::get_relative_path;
 use regex::{Captures, Regex};
 
 #[derive(Clone)]
@@ -67,9 +68,15 @@ impl Default for OverwriteOptions {
 }
 
 #[derive(Clone)]
+pub enum IndentExclusionRanges {
+  Single(Vec<u32>),
+  Nested(Vec<Vec<u32>>),
+}
+
+#[derive(Clone)]
 pub struct MagicStringOptions {
   pub filename: Option<String>,
-  pub indent_exclusion_ranges: Option<Vec<u32>>,
+  pub indent_exclusion_ranges: Option<IndentExclusionRanges>,
   pub ignore_list: Option<bool>,
 }
 
@@ -77,7 +84,7 @@ impl Default for MagicStringOptions {
   fn default() -> Self {
     Self {
       filename: Some(String::default()),
-      indent_exclusion_ranges: Some(vec![]),
+      indent_exclusion_ranges: None,
       ignore_list: Some(false),
     }
   }
@@ -119,10 +126,14 @@ pub struct MagicString {
 impl MagicString {
   pub fn new(str: &str, options: Option<MagicStringOptions>) -> Self {
     let options = options.unwrap_or_default();
-    let chunk = Rc::new(RefCell::new(Chunk::new(0, str.len() as u32, str)));
+    let chunk = Rc::new(RefCell::new(Chunk::new(
+      0,
+      str.len().try_into().unwrap(),
+      str,
+    )));
     let init_start_index_chunk_map: Vec<(u32, Rc<RefCell<Chunk>>)> = vec![(0, chunk.clone())];
     let init_end_index_chunk_map: Vec<(u32, Rc<RefCell<Chunk>>)> =
-      vec![(str.len() as u32, chunk.clone())];
+      vec![(str.len().try_into().unwrap(), chunk.clone())];
     Self {
       original: str.to_string(),
       intro: String::default(),
@@ -148,7 +159,7 @@ impl MagicString {
   }
 
   pub fn append(&mut self, str: &str) -> Result<&mut Self> {
-    self.outro = format!("{}{}", self.outro, str);
+    self.outro = concat_string!(self.outro, str);
     Ok(self)
   }
 
@@ -234,22 +245,20 @@ impl MagicString {
       include_content,
       source_root,
     } = options.unwrap_or_default();
-
     let hires = hires.unwrap_or_default();
-
-    let mut map = MappingsFacade::new(hires, &self.sourcemap_locations);
-
-    map.advance(self.intro.as_str());
+    let mut facade = MappingsFacade::new(hires, &self.sourcemap_locations);
+    facade.advance(self.intro.as_str());
 
     Chunk::each_next(Rc::clone(&self.first_chunk), |chunk| {
       let loc = self._locator.locate(chunk.borrow().start as usize);
       if let Some((o_line, o_column)) = loc {
-        map.add_mappings(
-          &chunk.borrow().intro.as_str(),
-          &chunk.borrow().original.as_str(),
+        facade.add_mappings(
+          &self.original.as_str(),
           &chunk.borrow().content.as_str(),
+          &chunk.borrow().intro.as_str(),
           &chunk.borrow().outro.as_str(),
           (o_line as u32, o_column as u32),
+          (chunk.borrow().start, chunk.borrow().end),
           chunk.borrow().is_edited(),
           self
             .stored_names
@@ -259,8 +268,7 @@ impl MagicString {
       }
       Ok(false)
     })?;
-
-    map.advance(self.outro.as_str());
+    facade.advance(self.outro.as_str());
 
     Ok(DecodedMap {
       version: SOURCEMAP_VERSION,
@@ -281,7 +289,7 @@ impl MagicString {
       }),
       source_root,
       names: self.stored_names.to_owned(),
-      mappings: map.get_decoded_mappings(),
+      mappings: facade.get(),
       x_google_ignoreList: if self.ignore_list {
         Some(vec![SOURCE_INDEX])
       } else {
@@ -291,11 +299,11 @@ impl MagicString {
   }
 
   pub fn _move(&mut self, start: i32, end: i32, index: u32) -> Result<&mut Self> {
-    let (_start, _end) = _normalize_range(self.original.as_str(), start, end)?;
+    let (_start, _end) = normalize_range(self.original.as_str(), start, end)?;
 
     if index >= _start && index <= _end {
       return Err(Error::from_reason(
-        MsErrType::Range,
+        FmsErrType::Range,
         "Cannot move a selection inside itself",
       ));
     }
@@ -386,11 +394,11 @@ impl MagicString {
     let store_name = option.store_name.unwrap_or_default();
     let content_only = option.content_only.unwrap_or_default();
 
-    let (_start, _end) = _normalize_range(self.original.as_str(), start, end)?;
+    let (_start, _end) = normalize_range(self.original.as_str(), start, end)?;
 
     if _start == _end {
       return Err(Error::from_reason(
-        MsErrType::Range,
+        FmsErrType::Range,
         "Cannot overwrite a zero-length range – use appendLeft or prependRight instead",
       ));
     }
@@ -421,7 +429,7 @@ impl MagicString {
         let c = cur.as_ref().unwrap();
         if c.borrow().next.as_ref() != self.start_index_chunk_map.get(&c.borrow().end) {
           return Err(Error::from_reason(
-            MsErrType::Overwrite,
+            FmsErrType::Overwrite,
             "Cannot overwrite across a split point",
           ));
         }
@@ -443,7 +451,7 @@ impl MagicString {
   }
 
   pub fn prepend(&mut self, str: &str) -> Result<&mut Self> {
-    self.intro = format!("{}{}", str, self.intro);
+    self.intro = concat_string!(str, self.intro);
     Ok(self)
   }
 
@@ -470,7 +478,7 @@ impl MagicString {
   }
 
   pub fn remove(&mut self, start: i32, end: i32) -> Result<&Self> {
-    let (_start, _end) = _normalize_range(self.original.as_str(), start, end)?;
+    let (_start, _end) = normalize_range(self.original.as_str(), start, end)?;
 
     if _start == _end {
       return Ok(self);
@@ -497,7 +505,7 @@ impl MagicString {
   }
 
   pub fn reset(&mut self, start: i32, end: i32) -> Result<&Self> {
-    let (_start, _end) = _normalize_range(self.original.as_str(), start, end)?;
+    let (_start, _end) = normalize_range(self.original.as_str(), start, end)?;
     if _start == _end {
       return Ok(self);
     }
@@ -519,7 +527,7 @@ impl MagicString {
   }
 
   pub fn slice(&self, start: i32, end: i32) -> Result<String> {
-    let (_start, _end) = _normalize_range(self.original.as_str(), start, end)?;
+    let (_start, _end) = normalize_range(self.original.as_str(), start, end)?;
     let mut s = String::new();
     let mut chunk = Some(Rc::clone(&self.first_chunk));
     while let Some(cur) = chunk.clone() {
@@ -535,7 +543,7 @@ impl MagicString {
     if let Some(cur) = chunk.clone() {
       if cur.borrow().edited && cur.borrow().start != _start {
         return Err(Error::from_reason(
-          MsErrType::Slice,
+          FmsErrType::Slice,
           format!(
             "Cannot use replaced character {} as slice start anchor.",
             _start
@@ -553,7 +561,7 @@ impl MagicString {
         let contains_end = c.borrow().start < _end && c.borrow().end >= _end;
         if contains_end && c.borrow().edited && c.borrow().end != _end {
           return Err(Error::from_reason(
-            MsErrType::Slice,
+            FmsErrType::Slice,
             format!(
               "Cannot use replaced character {} as slice end anchor.",
               _end
@@ -577,7 +585,7 @@ impl MagicString {
           s.push_str(&c.borrow().outro);
         }
         loop_idx += 1;
-        return Ok(contains_end);
+        Ok(contains_end)
       })?;
     }
 
@@ -626,17 +634,17 @@ impl MagicString {
     }
 
     let mut should_indent_next_character = if let Some(indent_start) = options.indent_start {
-      indent_start != false
+      indent_start
     } else {
       true
     };
 
-    let re = Regex::new(r"(?m)^[^\r\n]").unwrap();
+    let regexp = Regex::new(r"(?m)^[^\r\n]").unwrap();
 
-    self.intro = re
+    self.intro = regexp
       .replace_all(&self.intro, |caps: &regex::Captures| {
         if should_indent_next_character {
-          format!("{}{}", indent_str, &caps[0])
+          concat_string!(indent_str, &caps[0])
         } else {
           should_indent_next_character = true;
           caps[0].to_string()
@@ -650,10 +658,10 @@ impl MagicString {
       if chunk.borrow().is_edited() {
         let is_excluded = is_excluded_map.get(&char_index).copied().unwrap_or(false);
         if !is_excluded {
-          chunk.borrow_mut().content = re
+          chunk.borrow_mut().content = regexp
             .replace_all(&content, |caps: &regex::Captures| {
               if should_indent_next_character {
-                format!("{}{}", indent_str, &caps[0])
+                concat_string!(indent_str, &caps[0])
               } else {
                 should_indent_next_character = true;
                 caps[0].to_string()
@@ -692,10 +700,10 @@ impl MagicString {
       Ok(false)
     });
 
-    self.outro = re
+    self.outro = regexp
       .replace_all(&self.outro, |caps: &regex::Captures| {
         if should_indent_next_character {
-          format!("{}{}", indent_str, &caps[0])
+          concat_string!(indent_str, &caps[0])
         } else {
           should_indent_next_character = true;
           caps[0].to_string()
@@ -716,8 +724,8 @@ impl MagicString {
 
   pub fn trim_start_aborted(&mut self, char_type: Option<&str>) -> bool {
     let pat = "^".to_owned() + char_type.unwrap_or("\\s") + "+";
-    let reg = Regex::new(pat.as_str()).unwrap();
-    self.intro = reg.replace(&self.intro, "").to_string();
+    let regexp = Regex::new(pat.as_str()).unwrap();
+    self.intro = regexp.replace(&self.intro, "").to_string();
     if !self.intro.is_empty() {
       return true;
     }
@@ -726,7 +734,7 @@ impl MagicString {
     while let Some(c) = cur {
       let mut _cur = c.borrow_mut();
       // let end = _cur.end;
-      let aborted = _cur.trim_start(&reg);
+      let aborted = _cur.trim_start(&regexp);
       if aborted {
         return true;
       }
@@ -743,8 +751,8 @@ impl MagicString {
 
   pub fn trim_end_aborted(&mut self, char_type: Option<&str>) -> bool {
     let pat = char_type.unwrap_or("\\s").to_owned() + "+$";
-    let reg = Regex::new(pat.as_str()).unwrap();
-    self.outro = reg.replace(&self.outro, "").to_string();
+    let regexp = Regex::new(pat.as_str()).unwrap();
+    self.outro = regexp.replace(&self.outro, "").to_string();
     if !self.outro.is_empty() {
       return true;
     }
@@ -753,7 +761,7 @@ impl MagicString {
     while let Some(c) = cur {
       let mut _cur = c.borrow_mut();
       // let end = _cur.end;
-      let aborted = _cur.trim_end(&reg);
+      let aborted = _cur.trim_end(&regexp);
       if aborted {
         return true;
       }
@@ -777,7 +785,7 @@ impl MagicString {
     self.original != self.to_string()
   }
 
-  pub fn _replace_regexp(
+  pub fn replace_by_regexp(
     &mut self,
     search_value: &str,
     replacement: &str,
@@ -785,13 +793,13 @@ impl MagicString {
   ) -> Result<&Self> {
     let this = self as *mut Self;
 
-    let reg = Regex::new(search_value).unwrap();
+    let regexp = Regex::new(search_value).unwrap();
     let str = self.original.as_str();
-    let matches = match_all(&reg, str, global);
+    let matches = match_all(&regexp, str, global);
 
     let get_replacement = |match_item: &Captures| {
-      let reg = Regex::new(r"\$(\$|&|(\d+))").unwrap();
-      return reg.replace(replacement, |caps: &Captures| {
+      let regexp = Regex::new(r"\$(\$|&|(\d+))").unwrap();
+      regexp.replace(replacement, |caps: &Captures| {
         let matched = &caps[0];
         let i = &caps[1];
         match i {
@@ -800,7 +808,7 @@ impl MagicString {
           num_str => {
             if let Ok(num) = num_str.parse::<usize>() {
               if num < match_item.len() {
-                return match_item.get(num).unwrap().as_str().to_string();
+                match_item.get(num).unwrap().as_str().to_string()
               } else {
                 format!("${}", i)
               }
@@ -809,12 +817,12 @@ impl MagicString {
             }
           }
         }
-      });
+      })
     };
 
     for (idx, caps) in matches.0.iter().enumerate() {
       let _replacement = get_replacement(caps);
-      let offset = matches.1.get(idx).unwrap_or_else(|| &0);
+      let offset = matches.1.get(idx).unwrap_or(&0);
       let start = (caps.get(0).unwrap().start() + *offset) as i32;
       let end = (caps.get(0).unwrap().end() + *offset) as i32;
       unsafe {
@@ -824,8 +832,8 @@ impl MagicString {
     Ok(self)
   }
 
-  pub fn _replace_string(&mut self, search_value: &str, replacement: &str) -> Result<&Self> {
-    let start = find_char_index_of_substring(&self.original, search_value);
+  pub fn replace_by_string(&mut self, search_value: &str, replacement: &str) -> Result<&Self> {
+    let start = self.original.find(search_value);
 
     if let Some(start) = start {
       self.overwrite(
@@ -839,15 +847,15 @@ impl MagicString {
     Ok(self)
   }
 
-  pub fn _replace_all_string(&mut self, search_value: &str, replacement: &str) -> Result<&Self> {
-    let mut start = find_char_index_of_substring(&self.original, search_value);
+  pub fn replace_all_by_string(&mut self, search_value: &str, replacement: &str) -> Result<&Self> {
+    let mut start = self.original.find(search_value);
     let mut offset: usize = 0;
     while let Some(_start) = start {
       let _start = _start + offset;
-      offset = _start + search_value.chars().count();
+      offset = _start + search_value.len();
       self.overwrite(_start as i32, offset as i32, replacement, None)?;
       start = if offset <= self.original.len() {
-        find_char_index_of_substring(&self.original[offset..], search_value)
+        self.original[offset..].find(search_value)
       } else {
         None
       }
@@ -904,7 +912,7 @@ impl MagicString {
     if chunk.borrow().is_edited() && !chunk.borrow().content.is_empty() {
       if let Some((line, column)) = self._locator.locate(index as usize) {
         return Err(Error::from_reason(
-          MsErrType::SplitChunk,
+          FmsErrType::SplitChunk,
           format!(
             "Cannot split a chunk that has already been edited ({}:{} – '{}')",
             line,
@@ -915,7 +923,7 @@ impl MagicString {
         ));
       } else {
         return Err(Error::from_reason(
-          MsErrType::SplitChunk,
+          FmsErrType::SplitChunk,
           "Cannot split a chunk that has already been edited",
         ));
       }

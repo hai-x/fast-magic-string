@@ -38,14 +38,25 @@ Inspired by [magic-string-rs](https://github.com/h-a-n-a/magic-string-rs).
 - [x] replace
 - [x] replaceAll
 
-### To be improved
+## Benchmarks
 
-1. Javascript Regexp -> Rust Regexp
+### Hardware Overview
 
-- [] replace
-- [] replaceAll
+    Model Name: MacBook Pro
+    Model Identifier: MacBookPro18,3
+    Chip: Apple M1 Pro
+    Total Number of Cores: 8 (6 performance and 2 efficiency)
+    Memory: 16 GB
 
-2. performance
+### Version Overview
 
-- [] generateDecodedMap
-- [] generateMap
+    nodejs-version: 18.15.0
+    magic-string: 0.30.17
+    fast-magic-string: workspace
+
+### Output
+
+| Task Name         | ops/sec | Average Time (ns) | Margin  | Samples |
+| ----------------- | ------- | ----------------- | ------- | ------- |
+| magic-string      | 1,206   | 828588.7028143657 | ±15.48% | 123     |
+| fast-magic-string | 1,698   | 588664.5233908365 | ±9.24%  | 172     |

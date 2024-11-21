@@ -29,19 +29,20 @@ impl MappingsFacade {
 
   pub fn add_mappings(
     &mut self,
-    intro: &str,
-    original: &str,
-    content: &str,
-    outro: &str,
-    (o_line, o_column): (u32, u32),
-    is_edited: bool,
+    string_original: &str,
+    chunk_content: &str,
+    chunk_intro: &str,
+    chunk_outro: &str,
+    (origin_line, origin_column): (u32, u32),
+    (chunk_start, chunk_end): (u32, u32),
+    chunk_is_edited: bool,
     name_index: usize,
   ) {
-    if !intro.is_empty() {
-      self.advance(intro);
+    if !chunk_intro.is_empty() {
+      self.advance(chunk_intro);
     }
-    if is_edited {
-      let lines: Vec<&str> = content.split('\n').collect();
+    if chunk_is_edited {
+      let lines: Vec<&str> = chunk_content.split('\n').collect();
       let lines_len = lines.len();
 
       for (index, &s) in lines.iter().enumerate() {
@@ -49,8 +50,8 @@ impl MappingsFacade {
           let mut seg: Seg = vec![
             self.generated_code_column.into(),
             SOURCE_INDEX.into(),
-            o_line.into(),
-            o_column.into(),
+            origin_line.into(),
+            origin_column.into(),
           ];
 
           if name_index < usize::MAX {
@@ -70,12 +71,13 @@ impl MappingsFacade {
         }
       }
     } else {
-      let mut o_line = o_line;
-      let mut o_column = o_column;
+      let mut original_char_index = chunk_start as usize;
+      let mut o_line = origin_line;
+      let mut o_column = origin_column;
       let mut first = true;
-      for (idx, char) in original.chars().enumerate() {
-        // TODO:logic order
-        if self.hires || first || self.sourcemap_locations.has(idx) {
+
+      while original_char_index < chunk_end as usize {
+        if self.hires || first || self.sourcemap_locations.has(original_char_index) {
           let seg: Seg = vec![
             self.generated_code_column.into(),
             SOURCE_INDEX.into(),
@@ -89,11 +91,11 @@ impl MappingsFacade {
             self.raw.push(vec![seg]);
           }
         }
-        match char {
+        match string_original.chars().nth(original_char_index).unwrap() {
           '\n' => {
             o_line += 1;
-            o_column = 0;
             self.generated_code_line += 1;
+            o_column = 0;
             self.generated_code_column = 0;
             first = true
           }
@@ -103,10 +105,12 @@ impl MappingsFacade {
             first = false
           }
         }
+
+        original_char_index += 1;
       }
     }
-    if !outro.is_empty() {
-      self.advance(outro);
+    if !chunk_outro.is_empty() {
+      self.advance(chunk_outro);
     }
   }
 
@@ -115,7 +119,6 @@ impl MappingsFacade {
       return;
     }
     let lines: Vec<&str> = str.split("\n").collect();
-
     if lines.len() > 1 {
       for _ in 0..lines.len() - 1 {
         self.generated_code_line += 1;
@@ -127,12 +130,12 @@ impl MappingsFacade {
     self.generated_code_column += lines.last().unwrap().len() as u32;
   }
 
-  pub fn get_decoded_mappings(&mut self) -> Mappings {
+  pub fn get(&mut self) -> Mappings {
     let mut source_index: i64 = 0;
     let mut original_line: i64 = 0;
     let mut original_column: i64 = 0;
 
-    let decoded_mappings = self
+    self
       .raw
       .iter()
       .map(|line| {
@@ -160,27 +163,32 @@ impl MappingsFacade {
           })
           .collect::<Line>()
       })
-      .collect::<Mappings>();
-
-    decoded_mappings
+      .collect::<Mappings>()
   }
 }
 
-pub fn serialize_mappings(raw_mappings: &Mappings) -> Result<String, SourcemapError> {
-  let mut res: Vec<String> = vec![];
-  for line in raw_mappings.iter() {
-    let mut line_str: Vec<String> = vec![];
-    for seg in line.iter() {
-      let mut seg_str: Vec<String> = vec![];
+pub fn encode_mappings(raw_mappings: &Mappings) -> Result<String, SourcemapError> {
+  // see https://github.com/hoodie/concatenation_benchmarks-rs
+  let mut s = String::new();
+  for (line_idx, line) in raw_mappings.iter().enumerate() {
+    let mut line_s = String::new();
+    for (seg_idx, seg) in line.iter().enumerate() {
+      let mut seg_s = String::new();
       for item in seg.iter() {
         let mut vlq_output: Vec<u8> = vec![];
         // vlq need i64
         vlq::encode(item.to_owned(), &mut vlq_output)?;
-        seg_str.push(String::from_utf8(vlq_output)?);
+        seg_s.push_str(&String::from_utf8(vlq_output)?);
       }
-      line_str.push(seg_str.join(""));
+      line_s.push_str(&seg_s);
+      if seg_idx != line.len() - 1 {
+        line_s.push_str(",");
+      }
     }
-    res.push(line_str.join(","));
+    s.push_str(&line_s);
+    if line_idx != raw_mappings.len() - 1 {
+      s.push_str(";");
+    }
   }
-  Ok(res.join(";"))
+  Ok(s)
 }
