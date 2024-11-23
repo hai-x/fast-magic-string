@@ -97,19 +97,6 @@ pub fn guess_indent(code: &str) -> Result<String> {
   Ok(" ".repeat(min_spaces))
 }
 
-pub fn safe_split_at(s: &str, index: usize) -> Option<(&str, &str)> {
-  if index > s.chars().count() {
-    return None;
-  }
-
-  let byte_index = s
-    .char_indices()
-    .nth(index)
-    .map(|(byte_index, _)| byte_index)?;
-
-  Some(s.split_at(byte_index))
-}
-
 pub fn find_char_index_of_substring(s: &str, substring: &str) -> Option<usize> {
   let mut char_index = 0;
   let mut byte_index = 0;

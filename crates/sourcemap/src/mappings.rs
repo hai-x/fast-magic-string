@@ -167,20 +167,27 @@ impl MappingsFacade {
 }
 
 pub fn serialize_mappings(raw_mappings: &Mappings) -> Result<String, SourcemapError> {
-  let mut res: Vec<String> = vec![];
-  for line in raw_mappings.iter() {
-    let mut line_str: Vec<String> = vec![];
-    for seg in line.iter() {
-      let mut seg_str: Vec<String> = vec![];
+  // see https://github.com/hoodie/concatenation_benchmarks-rs
+  let mut s = String::new();
+  for (line_idx, line) in raw_mappings.iter().enumerate() {
+    let mut line_s = String::new();
+    for (seg_idx, seg) in line.iter().enumerate() {
+      let mut seg_s = String::new();
       for item in seg.iter() {
         let mut vlq_output: Vec<u8> = vec![];
         // vlq need i64
         vlq::encode(item.to_owned(), &mut vlq_output)?;
-        seg_str.push(String::from_utf8(vlq_output)?);
+        seg_s.push_str(&String::from_utf8(vlq_output)?);
       }
-      line_str.push(seg_str.join(""));
+      line_s.push_str(&seg_s);
+      if seg_idx != line.len() - 1 {
+        line_s.push_str(",");
+      }
     }
-    res.push(line_str.join(","));
+    s.push_str(&line_s);
+    if line_idx != raw_mappings.len() - 1 {
+      s.push_str(";");
+    }
   }
-  Ok(res.join(";"))
+  Ok(s)
 }
