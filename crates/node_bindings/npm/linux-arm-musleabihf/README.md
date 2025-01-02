@@ -1,4 +1,3 @@
-# `@fast-magic-string/node_bindings-linux-arm-musleabihf`
+# `fast-magic-string-linux-arm-musleabihf`
 
-This is the **armv7-unknown-linux-musleabihf** binary for
-`@fast-magic-string/node_bindings`
+This is the **armv7-unknown-linux-musleabihf** binary for `fast-magic-string`
