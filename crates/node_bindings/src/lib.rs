@@ -1,54 +1,66 @@
-extern crate fast_magic_string_malloc;
+extern crate fms_malloc;
 extern crate napi;
 
 #[macro_use]
 extern crate napi_derive;
 
 use error::to_napi_error;
-use napi::{bindgen_prelude::Either, JsFunction, Result};
+use fms_regexp::FmsRegex;
+use napi::{
+  bindgen_prelude::{Either, Function},
+  Result,
+};
 
 extern crate fast_magic_string;
 
 use fast_magic_string::{
-  error::{Error, MsErrType},
+  error::{Error, FmsErrType},
   MagicString,
 };
 mod types;
 
 use types::{
   JsDecodedMap, JsGenerateMapOptions, JsIndentOptions, JsMagicStringOptions, JsOverwriteOptions,
-  JsRegExp, JsSourceMap,
+  JsSourceMap,
 };
 
 mod error;
 
 #[napi(js_name = "MagicString")]
-struct JsMagicString(MagicString);
+struct JsMagicString {
+  inner: MagicString,
+  pub indent_exclusion_ranges: Option<Either<Vec<u32>, Vec<Vec<u32>>>>,
+}
 
 #[allow(dead_code)]
 #[napi]
 impl JsMagicString {
   #[napi(constructor)]
   pub fn new(str: String, options: Option<JsMagicStringOptions>) -> JsMagicString {
-    JsMagicString(MagicString::new(str.as_str(), options.map(|x| x.into())))
+    JsMagicString {
+      indent_exclusion_ranges: options
+        .as_ref()
+        .and_then(|o| o.indent_exclusion_ranges.clone()),
+      inner: MagicString::new(str.as_str(), options.map(|x| x.into())),
+    }
   }
 
   #[napi]
   pub fn add_sourcemap_location(&mut self, index: u32) -> Result<&Self> {
-    self.0.add_sourcemap_location(index);
+    self.inner.add_sourcemap_location(index);
     Ok(self)
   }
 
   #[napi]
   pub fn append(&mut self, input: String) -> Result<&Self> {
-    self.0.append(input.as_str()).map_err(to_napi_error)?;
+    self.inner.append(input.as_str()).map_err(to_napi_error)?;
     Ok(self)
   }
 
   #[napi]
   pub fn append_left(&mut self, index: u32, input: String) -> Result<&Self> {
     self
-      .0
+      .inner
       .append_left(index, input.as_str())
       .map_err(to_napi_error)?;
     Ok(self)
@@ -56,14 +68,18 @@ impl JsMagicString {
 
   #[napi]
   pub fn clone(&self) -> JsMagicString {
-    let ms = self.0.clone();
-    JsMagicString(ms)
+    let inner = self.inner.clone();
+    let indent_exclusion_ranges = self.indent_exclusion_ranges.clone();
+    JsMagicString {
+      indent_exclusion_ranges,
+      inner,
+    }
   }
 
   #[napi]
   pub fn generate_map(&mut self, options: Option<JsGenerateMapOptions>) -> Result<JsSourceMap> {
     let map = self
-      .0
+      .inner
       .generate_map(options.map(|x| x.into()))
       .map_err(to_napi_error)?
       .into();
@@ -76,7 +92,7 @@ impl JsMagicString {
     options: Option<JsGenerateMapOptions>,
   ) -> Result<JsDecodedMap> {
     let decoded_map = self
-      .0
+      .inner
       .generate_decoded_map(options.map(|x| x.into()))
       .map_err(to_napi_error)?
       .into();
@@ -90,7 +106,7 @@ impl JsMagicString {
     options: Option<JsIndentOptions>,
   ) -> Result<&Self> {
     self
-      .0
+      .inner
       .indent(indent_str, options.map(|x| x.into()))
       .map_err(to_napi_error)?;
     Ok(self)
@@ -99,7 +115,7 @@ impl JsMagicString {
   #[napi]
   pub fn insert(&mut self) -> Result<()> {
     Err(to_napi_error(Error::from_reason(
-      MsErrType::Deprecated,
+      FmsErrType::Deprecated,
       "magicString.insert(...) is deprecated. Use prependRight(...) or appendLeft(...)",
     )))
   }
@@ -108,7 +124,7 @@ impl JsMagicString {
   pub fn insert_left(&mut self, index: u32, input: String) -> Result<&Self> {
     println!("magicString.insertLeft(...) is deprecated. Use magicString.appendLeft(...) instead");
     self
-      .0
+      .inner
       .append_left(index, input.as_str())
       .map_err(to_napi_error)?;
     Ok(self)
@@ -117,7 +133,7 @@ impl JsMagicString {
   #[napi]
   pub fn append_right(&mut self, index: u32, input: String) -> Result<&Self> {
     self
-      .0
+      .inner
       .append_right(index, input.as_str())
       .map_err(to_napi_error)?;
     Ok(self)
@@ -125,14 +141,14 @@ impl JsMagicString {
 
   #[napi]
   pub fn prepend(&mut self, input: String) -> Result<&Self> {
-    self.0.prepend(input.as_str()).map_err(to_napi_error)?;
+    self.inner.prepend(input.as_str()).map_err(to_napi_error)?;
     Ok(self)
   }
 
   #[napi]
   pub fn prepend_left(&mut self, index: u32, input: String) -> Result<&Self> {
     self
-      .0
+      .inner
       .prepend_left(index, input.as_str())
       .map_err(to_napi_error)?;
     Ok(self)
@@ -141,7 +157,7 @@ impl JsMagicString {
   #[napi]
   pub fn prepend_right(&mut self, index: u32, input: String) -> Result<&Self> {
     self
-      .0
+      .inner
       .prepend_right(index, input.as_str())
       .map_err(to_napi_error)?;
     Ok(self)
@@ -153,7 +169,7 @@ impl JsMagicString {
       "magicString.insertRight(...) is deprecated. Use magicString.prependRight(...) instead"
     );
     self
-      .0
+      .inner
       .prepend_right(index, input.as_str())
       .map_err(to_napi_error)?;
     Ok(self)
@@ -161,37 +177,37 @@ impl JsMagicString {
 
   #[napi]
   pub fn trim(&mut self, char_type: Option<String>) -> Result<&Self> {
-    self.0.trim(char_type.as_deref());
+    self.inner.trim(char_type.as_deref());
     Ok(self)
   }
 
   #[napi]
   pub fn trim_lines(&mut self) -> Result<&Self> {
-    self.0.trim_lines();
+    self.inner.trim_lines();
     Ok(self)
   }
 
   #[napi]
   pub fn trim_start(&mut self, char_type: Option<String>) -> Result<&Self> {
-    self.0.trim_start(char_type.as_deref());
+    self.inner.trim_start(char_type.as_deref());
     Ok(self)
   }
 
   #[napi]
   pub fn trim_end(&mut self, char_type: Option<String>) -> Result<&Self> {
-    self.0.trim_end(char_type.as_deref());
+    self.inner.trim_end(char_type.as_deref());
     Ok(self)
   }
 
   #[napi(js_name = "move")]
   pub fn _move(&mut self, start: i32, end: i32, index: u32) -> Result<&Self> {
-    self.0._move(start, end, index).map_err(to_napi_error)?;
+    self.inner._move(start, end, index).map_err(to_napi_error)?;
     Ok(self)
   }
 
   #[napi]
   pub fn remove(&mut self, start: i32, end: i32) -> Result<&Self> {
-    self.0.remove(start, end).map_err(to_napi_error)?;
+    self.inner.remove(start, end).map_err(to_napi_error)?;
     Ok(self)
   }
 
@@ -204,7 +220,7 @@ impl JsMagicString {
     options: Option<JsOverwriteOptions>,
   ) -> Result<&Self> {
     self
-      .0
+      .inner
       .overwrite(start, end, content.as_str(), options.map(|x| x.into()))
       .map_err(to_napi_error)?;
     Ok(self)
@@ -219,7 +235,7 @@ impl JsMagicString {
     options: Option<JsOverwriteOptions>,
   ) -> Result<&Self> {
     self
-      .0
+      .inner
       .update(start, end, content.as_str(), options.map(|x| x.into()))
       .map_err(to_napi_error)?;
     Ok(self)
@@ -227,67 +243,66 @@ impl JsMagicString {
 
   #[napi]
   pub fn is_empty(&self) -> bool {
-    self.0.is_empty()
+    self.inner.is_empty()
   }
 
   #[napi]
   pub fn to_string(&mut self) -> String {
-    self.0.to_string()
+    self.inner.to_string()
   }
 
   #[napi]
   pub fn has_changed(&self) -> bool {
-    self.0.has_changed()
+    self.inner.has_changed()
   }
 
   #[napi]
   pub fn snip(&mut self, start: i32, end: i32) -> Result<JsMagicString> {
-    let ms = self.0.snip(start, end).map_err(to_napi_error)?;
-    Ok(JsMagicString(ms))
+    let inner = self.inner.snip(start, end).map_err(to_napi_error)?;
+    let indent_exclusion_ranges = self.indent_exclusion_ranges.clone();
+    Ok(JsMagicString {
+      indent_exclusion_ranges,
+      inner,
+    })
   }
 
   #[napi]
   pub fn slice(&mut self, start: Option<i32>, end: Option<i32>) -> Result<String> {
     let _start = start.unwrap_or(0);
-    let _end = end.unwrap_or(self.0.original.len() as i32);
-    let ms = self.0.slice(_start, _end).map_err(to_napi_error)?;
-    Ok(ms)
+    let _end = end.unwrap_or(self.inner.original.len().try_into().unwrap());
+    Ok(self.inner.slice(_start, _end).map_err(to_napi_error)?)
   }
 
   #[napi]
   pub fn reset(&mut self, start: i32, end: i32) -> Result<&Self> {
-    self.0.reset(start, end).map_err(to_napi_error)?;
+    self.inner.reset(start, end).map_err(to_napi_error)?;
     Ok(self)
   }
 
   #[napi]
   pub fn replace(
     &mut self,
-    search_value: Either<String, JsRegExp>,
-    replacement: Either<String, JsFunction>,
+    #[napi(ts_arg_type = "RegExp | string")] pattern: Either<String, FmsRegex>,
+    replacement: Either<String, Function>,
   ) -> Result<&Self> {
     match replacement {
-      Either::A(replacement) => match search_value {
+      Either::A(replacement) => match pattern {
         Either::A(str) => {
           self
-            .0
-            ._replace_string(str.as_str(), replacement.as_str())
+            .inner
+            .replace_by_string(str.as_str(), replacement.as_str())
             .map_err(to_napi_error)?;
         }
-        Either::B(reg_exp) => {
+        Either::B(reg) => {
           self
-            .0
-            ._replace_regexp(
-              reg_exp.rule.as_str(),
-              replacement.as_str(),
-              reg_exp.global.unwrap_or_default(),
-            )
+            .inner
+            .replace_by_regexp(reg.source.as_str(), replacement.as_str(), reg.global())
             .map_err(to_napi_error)?;
         }
       },
       Either::B(_) => {
         return Err(to_napi_error(Error::from_reason(
-          MsErrType::Type,
+          FmsErrType::Type,
           "`replacement` argument do not supports RegExp replacerFn now",
         )));
       }
@@ -299,34 +314,36 @@ impl JsMagicString {
   #[napi]
   pub fn replace_all(
     &mut self,
-    search_value: Either<String, JsRegExp>,
-    replacement: Either<String, JsFunction>,
+    #[napi(ts_arg_type = "RegExp | string")] pattern: Either<String, FmsRegex>,
+    replacement: Either<String, Function>,
   ) -> Result<&Self> {
     match replacement {
-      Either::A(replacement) => match search_value {
-        Either::A(search_value) => {
+      Either::A(replacement) => match pattern {
+        Either::A(pattern) => {
           self
-            .0
-            ._replace_all_string(search_value.as_str(), replacement.as_str())
+            .inner
+            .replace_all_by_string(pattern.as_str(), replacement.as_str())
             .map_err(to_napi_error)?;
         }
-        Either::B(reg_exp) => {
-          let global = reg_exp.global.unwrap_or_default();
+        Either::B(reg) => {
+          let global = reg.global();
+          // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replaceAll#pattern
+          // > If pattern is a regex, then it must have the global (g) flag set, or a TypeError is thrown.
           if !global {
             return Err(to_napi_error(Error::from_reason(
-              MsErrType::Type,
+              FmsErrType::Type,
               "replaceAll called with a non-global RegExp argument",
             )));
           }
           self
-            .0
-            ._replace_regexp(reg_exp.rule.as_str(), replacement.as_str(), global)
+            .inner
+            .replace_by_regexp(reg.source.as_str(), replacement.as_str(), global)
             .map_err(to_napi_error)?;
         }
       },
       Either::B(_) => {
         return Err(to_napi_error(Error::from_reason(
-          MsErrType::Type,
+          FmsErrType::Type,
           "`replacement` argument do not supports RegExp replacerFn now",
         )));
       }

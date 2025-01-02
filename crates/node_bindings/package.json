@@ -3,8 +3,17 @@
   "version": "0.0.0",
   "main": "index.js",
   "types": "index.d.ts",
+  "keywords": [
+    "magic-string",
+    "napi",
+    "napi-rs"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "napi": {
-    "name": "node_bindings",
+    "name": "fms_node_bindings",
     "triples": {
       "additional": [
         "aarch64-apple-darwin",
@@ -24,11 +33,9 @@
     }
   },
   "license": "MIT",
+  "dependencies": {},
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4"
-  },
-  "ava": {
-    "timeout": "3m"
   },
   "engines": {
     "node": ">= 10"

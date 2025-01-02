@@ -1,40 +1,40 @@
-use fast_magic_string::error::{Error, MsErrType};
+use fast_magic_string::error::{Error, FmsErrType};
 
 #[inline]
 pub fn to_napi_error(err: Error) -> napi::Error {
   let mut reason = String::from("<rust-magic-string> ");
   match err.err_type {
-    MsErrType::Default => {
+    FmsErrType::Default => {
       reason.push_str("Default error (not expected to occur)");
     }
-    MsErrType::Deprecated => {
+    FmsErrType::Deprecated => {
       reason.push_str("Deprecated api error");
     }
-    MsErrType::Range => {
+    FmsErrType::Range => {
       reason.push_str("Index out of range");
     }
-    MsErrType::Overwrite => {
+    FmsErrType::Overwrite => {
       reason.push_str("Overwrite error");
     }
-    MsErrType::Type => {
+    FmsErrType::Type => {
       reason.push_str("TypeError");
     }
-    MsErrType::SplitChunk => {
+    FmsErrType::SplitChunk => {
       reason.push_str("Split chunk error");
     }
-    MsErrType::JSON => {
+    FmsErrType::JSON => {
       reason.push_str("Json serialize error");
     }
-    MsErrType::IO => {
+    FmsErrType::IO => {
       reason.push_str("IO error");
     }
-    MsErrType::Vlq => {
+    FmsErrType::Vlq => {
       reason.push_str("Vlq encode error");
     }
-    MsErrType::StringFromUTF8 => {
+    FmsErrType::StringFromUTF8 => {
       reason.push_str("String from utf-8 error");
     }
-    MsErrType::Slice => {
+    FmsErrType::Slice => {
       reason.push_str("Slice error");
     }
   }

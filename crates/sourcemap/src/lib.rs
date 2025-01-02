@@ -8,9 +8,12 @@ pub mod bit_set;
 pub mod error;
 pub mod mappings;
 
+#[macro_use(concat_string)]
+extern crate fms_utils;
+
 use base64::{engine::general_purpose, Engine};
 use error::SourcemapError;
-use mappings::{serialize_mappings, Mappings};
+use mappings::{encode_mappings, Mappings};
 use serde_derive::Serialize;
 
 pub static SOURCEMAP_VERSION: u8 = 3;
@@ -70,7 +73,7 @@ impl SourceMap {
     }
   }
 
-  // private fn
+  // @private
   pub fn from_decoded_map(
     DecodedMap {
       version,
@@ -86,7 +89,7 @@ impl SourceMap {
     Ok(Self {
       version,
       file,
-      mappings: serialize_mappings(&mappings)?,
+      mappings: encode_mappings(&mappings)?,
       names,
       sources_content,
       sources,
@@ -99,15 +102,15 @@ impl SourceMap {
     let s = serde_json::to_string(self);
     match s {
       Ok(s) => Ok(s),
-      Err(e) => Ok(String::default()),
+      Err(_) => Ok(String::default()),
     }
   }
 
   pub fn to_url(&self) -> Result<String, ()> {
     let str = self.to_string()?;
-    Ok(format!(
-      "data:application/json;charset=utf-8;base64,{}",
-      general_purpose::STANDARD.encode(str),
+    Ok(concat_string!(
+      "data:application/json;charset=utf-8;base64,",
+      general_purpose::STANDARD.encode(&str)
     ))
   }
 }

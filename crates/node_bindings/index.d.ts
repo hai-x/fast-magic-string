@@ -9,7 +9,7 @@ export interface JsIndentOptions {
 }
 export interface JsMagicStringOptions {
   filename?: string
-  indentExclusionRanges?: Array<number>
+  indentExclusionRanges?: Array<number> | Array<Array<number>>
   ignoreList?: boolean
 }
 export interface JsGenerateMapOptions {
@@ -24,7 +24,7 @@ export interface JsOverwriteOptions {
   storeName?: boolean
   overwrite?: boolean
 }
-export interface JsRegExp {
+export interface FmsRegex {
   global?: boolean
   rule: string
 }
@@ -50,6 +50,7 @@ export interface JsDecodedMap {
 }
 export type JsMagicString = MagicString
 export declare class MagicString {
+  indentExclusionRanges?: Array<number> | Array<Array<number>>
   constructor(str: string, options?: JsMagicStringOptions | undefined | null)
   addSourcemapLocation(index: number): this
   append(input: string): this
@@ -79,6 +80,6 @@ export declare class MagicString {
   snip(start: number, end: number): MagicString
   slice(start?: number | undefined | null, end?: number | undefined | null): string
   reset(start: number, end: number): this
-  replace(searchValue: string | JsRegExp, replacement: string | ((...args: any[]) => any)): this
-  replaceAll(searchValue: string | JsRegExp, replacement: string | ((...args: any[]) => any)): this
+  replace(pattern: RegExp | string, replacement: string | (any)): this
+  replaceAll(pattern: RegExp | string, replacement: string | (any)): this
 }

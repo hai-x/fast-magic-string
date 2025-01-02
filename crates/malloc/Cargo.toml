@@ -1,5 +1,5 @@
 [package]
-name = "fast_magic_string_malloc"
+name = "fms_malloc"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true

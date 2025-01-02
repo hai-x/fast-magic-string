@@ -1,9 +1,9 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::error::{Error, MsErrType};
-use crate::result::Result;
-use crate::utils::safe_split_at;
 use regex::Regex;
+
+use crate::error::{Error, FmsErrType};
+use crate::result::Result;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Chunk {
@@ -50,22 +50,22 @@ impl Chunk {
   }
 
   pub fn append_left(&mut self, str: &str) -> &Self {
-    self.outro = format!("{}{}", self.outro, str);
+    self.outro = concat_string!(self.outro, str);
     self
   }
 
   pub fn append_right(&mut self, str: &str) -> &Self {
-    self.intro = format!("{}{}", self.intro, str);
+    self.intro = concat_string!(self.intro, str);
     self
   }
 
   pub fn prepend_left(&mut self, str: &str) -> &Self {
-    self.outro = format!("{}{}", str, self.outro);
+    self.outro = concat_string!(str, self.outro);
     self
   }
 
   pub fn prepend_right(&mut self, str: &str) -> &Self {
-    self.intro = format!("{}{}", str, self.intro);
+    self.intro = concat_string!(str, self.intro);
     self
   }
 
@@ -159,27 +159,22 @@ impl Chunk {
 
     if index < cur_chunk.start {
       return Err(Error::from_reason(
-        MsErrType::Range,
+        FmsErrType::Range,
         "index larger than chunk start",
       ));
     }
 
     // split str
     let mid_index = (index - cur_chunk.start) as usize;
-    let split_res = safe_split_at(cur_chunk.original.as_str(), mid_index);
-
-    if split_res.is_none() {
-      return Err(Error::from_reason(
-        MsErrType::Range,
-        "index larger than str count",
-      ));
-    }
-
-    let (original_before, origin_after) = split_res.unwrap();
+    let origin_before = cur_chunk.original[0..mid_index].to_owned();
+    let origin_after = cur_chunk.original[mid_index..].to_owned();
 
     // create new chunk
-    let new_chunk: Rc<RefCell<Chunk>> =
-      Rc::new(RefCell::new(Chunk::new(index, cur_chunk.end, origin_after)));
+    let new_chunk: Rc<RefCell<Chunk>> = Rc::new(RefCell::new(Chunk::new(
+      index,
+      cur_chunk.end,
+      &origin_after,
+    )));
     new_chunk.borrow_mut().outro = cur_chunk.outro.to_owned();
     new_chunk.borrow_mut().next = {
       if cur_chunk.next.is_some() {
@@ -192,7 +187,7 @@ impl Chunk {
     new_chunk.borrow_mut().previous = Some(Rc::clone(&chunk));
 
     // update current chunk
-    cur_chunk.original = original_before.to_string();
+    cur_chunk.original = origin_before.to_string();
     cur_chunk.content = cur_chunk.original.clone();
     cur_chunk.end = index;
     cur_chunk.outro.clear();
