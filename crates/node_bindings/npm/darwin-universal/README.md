@@ -1,4 +1,3 @@
-# `@fast-magic-string/node_bindings-darwin-universal`
+# `fast-magic-string-darwin-universal`
 
-This is the **universal-apple-darwin** binary for
-`@fast-magic-string/node_bindings`
+This is the **universal-apple-darwin** binary for `fast-magic-string`

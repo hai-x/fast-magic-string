@@ -1,15 +1,24 @@
 {
-  "name": "@fast-magic-string/node_bindings-darwin-universal",
+  "name": "fast-magic-string-darwin-universal",
   "version": "0.0.0",
-  "os": [
-    "darwin"
-  ],
   "main": "node_bindings.darwin-universal.node",
   "files": [
     "node_bindings.darwin-universal.node"
   ],
+  "keywords": [
+    "magic-string",
+    "napi",
+    "napi-rs"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">= 10"
-  }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "os": [
+    "darwin"
+  ]
 }

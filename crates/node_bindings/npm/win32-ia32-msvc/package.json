@@ -1,9 +1,6 @@
 {
-  "name": "@fast-magic-string/node_bindings-win32-ia32-msvc",
+  "name": "fast-magic-string-win32-ia32-msvc",
   "version": "0.0.0",
-  "os": [
-    "win32"
-  ],
   "cpu": [
     "ia32"
   ],
@@ -11,8 +8,20 @@
   "files": [
     "node_bindings.win32-ia32-msvc.node"
   ],
+  "keywords": [
+    "magic-string",
+    "napi",
+    "napi-rs"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">= 10"
-  }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "os": [
+    "win32"
+  ]
 }

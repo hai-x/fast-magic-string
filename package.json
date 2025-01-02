@@ -6,7 +6,7 @@
     "test": "pnpm test:jest",
     "test:jest": "cross-env NODE_OPTIONS='--experimental-vm-modules' jest --config ./jest.config.js",
     "test:vitest": "vitest basic",
-    "bench": "node benches/code-speed.js"
+    "bench": "node benchmark/bench.js"
   },
   "devDependencies": {
     "@codspeed/tinybench-plugin": "^4.0.0",

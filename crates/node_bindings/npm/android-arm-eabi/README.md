@@ -1,4 +1,3 @@
-# `@fast-magic-string/node_bindings-android-arm-eabi`
+# `fast-magic-string-android-arm-eabi`
 
-This is the **armv7-linux-androideabi** binary for
-`@fast-magic-string/node_bindings`
+This is the **armv7-linux-androideabi** binary for `fast-magic-string`
