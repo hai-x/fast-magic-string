@@ -1,9 +1,6 @@
 {
-  "name": "@fast-magic-string/node_bindings-linux-x64-gnu",
+  "name": "fast-magic-string-linux-x64-gnu",
   "version": "0.0.0",
-  "os": [
-    "linux"
-  ],
   "cpu": [
     "x64"
   ],
@@ -11,10 +8,25 @@
   "files": [
     "node_bindings.linux-x64-gnu.node"
   ],
+  "keywords": [
+    "magic-string",
+    "napi",
+    "napi-rs"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">= 10"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "provenance": true
+  },
+  "repository": "https://github.com/hai-x/fast-magic-string",
+  "bugs": "https://github.com/hai-x/fast-magic-string/issues",
+  "os": [
+    "linux"
+  ],
   "libc": [
     "glibc"
   ]

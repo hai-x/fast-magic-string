@@ -12,3 +12,5 @@ repository = "https://github.com/hai-x/fast-magic-string"
 napi = { version = "3.0.0-alpha.24" }
 napi-build = { version = "2.1.4" }
 napi-derive = { version = "3.0.0-alpha.22" }
+mimalloc = "0.1.42"
+tikv-jemallocator = "0.6.0"

@@ -1,9 +1,6 @@
 {
-  "name": "@fast-magic-string/node_bindings-win32-arm64-msvc",
+  "name": "fast-magic-string-win32-arm64-msvc",
   "version": "0.0.0",
-  "os": [
-    "win32"
-  ],
   "cpu": [
     "arm64"
   ],
@@ -11,8 +8,23 @@
   "files": [
     "node_bindings.win32-arm64-msvc.node"
   ],
+  "keywords": [
+    "magic-string",
+    "napi",
+    "napi-rs"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">= 10"
-  }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "provenance": true
+  },
+  "repository": "https://github.com/hai-x/fast-magic-string",
+  "bugs": "https://github.com/hai-x/fast-magic-string/issues",
+  "os": [
+    "win32"
+  ]
 }

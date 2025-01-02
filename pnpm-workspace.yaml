@@ -1,2 +1,3 @@
 packages:
   - crates/node_bindings
+  - crates/node_bindings/npm/*

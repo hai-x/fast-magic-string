@@ -66,8 +66,7 @@ impl SourceMap {
       source_root: source_root.map(|s| s.to_owned()),
       sources: sources
         .iter()
-        .map(|s| s.map(|s| s.to_owned()))
-        .flatten()
+        .filter_map(|s| s.map(|s| s.to_owned()))
         .collect(),
       x_google_ignoreList,
     }

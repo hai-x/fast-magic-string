@@ -1,5 +1,4 @@
-#![deny(clippy::all)]
-
+#[deny(clippy::inherent_to_string)]
 pub mod error;
 pub mod locator;
 pub mod result;
@@ -90,18 +89,10 @@ impl Default for MagicStringOptions {
   }
 }
 
+#[derive(Default)]
 pub struct IndentOptions {
   pub exclude: Option<Vec<Vec<u32>>>,
   pub indent_start: Option<bool>,
-}
-
-impl Default for IndentOptions {
-  fn default() -> Self {
-    Self {
-      exclude: None,
-      indent_start: None,
-    }
-  }
 }
 
 #[allow(non_camel_case_types)]
@@ -185,7 +176,7 @@ impl MagicString {
     Ok(self)
   }
 
-  pub fn clone(&self) -> MagicString {
+  pub fn _clone(&self) -> MagicString {
     let mut cloned = MagicString::new(self.original.as_str(), Some(self._raw_options.clone()));
     cloned.first_chunk = Rc::new(RefCell::new(self.first_chunk.borrow().self_clone()));
     cloned.last_chunk = Rc::clone(&cloned.first_chunk);
@@ -253,17 +244,17 @@ impl MagicString {
       let loc = self._locator.locate(chunk.borrow().start as usize);
       if let Some((o_line, o_column)) = loc {
         facade.add_mappings(
-          &self.original.as_str(),
-          &chunk.borrow().content.as_str(),
-          &chunk.borrow().intro.as_str(),
-          &chunk.borrow().outro.as_str(),
+          self.original.as_str(),
+          chunk.borrow().content.as_str(),
+          chunk.borrow().intro.as_str(),
+          chunk.borrow().outro.as_str(),
           (o_line as u32, o_column as u32),
           (chunk.borrow().start, chunk.borrow().end),
           chunk.borrow().is_edited(),
           self
             .stored_names
             .binary_search(&chunk.borrow().original)
-            .unwrap_or_else(|_| usize::MAX),
+            .unwrap_or(usize::MAX),
         );
       }
       Ok(false)
@@ -274,17 +265,16 @@ impl MagicString {
       version: SOURCEMAP_VERSION,
       file: file
         .as_ref()
-        .map(|x| x.split(&['/', '\\'][..]).last().map(String::from))
-        .flatten(),
+        .and_then(|x| x.split(&['/', '\\'][..]).last().map(String::from)),
       sources: vec![source
         .as_ref()
         .map(|x| get_relative_path(&file.unwrap_or_default(), x))
         .unwrap_or_default()],
       sources_content: include_content.and_then(|x| {
         if x {
-          return Some(vec![self.original.to_owned()]);
+          Some(vec![self.original.to_owned()])
         } else {
-          return None;
+          None
         }
       }),
       source_root,
@@ -418,11 +408,9 @@ impl MagicString {
 
     if first.is_some() && last.is_some() {
       let first = Rc::clone(first.unwrap());
-      first.borrow_mut().edit(
-        content,
-        store_name,
-        !option.overwrite.unwrap_or_else(|| false),
-      );
+      first
+        .borrow_mut()
+        .edit(content, store_name, !option.overwrite.unwrap_or(false));
       let last = Rc::clone(last.unwrap());
       let mut cur = Some(first);
       while cur.is_some() && cur.clone().unwrap() != last {
@@ -554,7 +542,7 @@ impl MagicString {
     }
     let mut loop_idx = 0;
     if let Some(cur) = chunk {
-      let _ = Chunk::each_next(cur, |c| {
+      Chunk::each_next(cur, |c| {
         if !c.borrow().intro.is_empty() && (loop_idx != 0 || c.borrow().start == _start) {
           s.push_str(&c.borrow().intro);
         }
@@ -588,12 +576,11 @@ impl MagicString {
         Ok(contains_end)
       })?;
     }
-
     Ok(s)
   }
 
   pub fn snip(&mut self, start: i32, end: i32) -> Result<MagicString> {
-    let mut cloned = self.clone();
+    let mut cloned = self._clone();
     cloned.remove(0, start)?;
     cloned.remove(end, cloned.original.len() as i32)?;
     Ok(cloned)
@@ -633,11 +620,7 @@ impl MagicString {
       }
     }
 
-    let mut should_indent_next_character = if let Some(indent_start) = options.indent_start {
-      indent_start
-    } else {
-      true
-    };
+    let mut should_indent_next_character = options.indent_start.unwrap_or(true);
 
     let regexp = Regex::new(r"(?m)^[^\r\n]").unwrap();
 
@@ -943,10 +926,8 @@ impl MagicString {
     }
     Ok(())
   }
-}
 
-impl ToString for MagicString {
-  fn to_string(&self) -> String {
+  pub fn to_string(&self) -> String {
     let mut str = self.intro.clone();
     let _ = Chunk::each_next(Rc::clone(&self.first_chunk), |chunk| {
       str.push_str(chunk.borrow().intro.as_str());

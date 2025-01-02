@@ -1,9 +1,6 @@
 {
-  "name": "@fast-magic-string/node_bindings-freebsd-x64",
+  "name": "fast-magic-string-freebsd-x64",
   "version": "0.0.0",
-  "os": [
-    "freebsd"
-  ],
   "cpu": [
     "x64"
   ],
@@ -11,8 +8,23 @@
   "files": [
     "node_bindings.freebsd-x64.node"
   ],
+  "keywords": [
+    "magic-string",
+    "napi",
+    "napi-rs"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">= 10"
-  }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "provenance": true
+  },
+  "repository": "https://github.com/hai-x/fast-magic-string",
+  "bugs": "https://github.com/hai-x/fast-magic-string/issues",
+  "os": [
+    "freebsd"
+  ]
 }
