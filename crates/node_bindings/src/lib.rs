@@ -68,7 +68,7 @@ impl JsMagicString {
 
   #[napi]
   pub fn clone(&self) -> JsMagicString {
-    let inner = self.inner.clone();
+    let inner = self.inner._clone();
     let indent_exclusion_ranges = self.indent_exclusion_ranges.clone();
     JsMagicString {
       indent_exclusion_ranges,

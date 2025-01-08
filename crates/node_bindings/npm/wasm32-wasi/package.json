@@ -1,12 +1,16 @@
 {
-  "name": "fast-magic-string-win32-ia32-msvc",
+  "name": "fast-magic-string-wasm32-wasi",
   "version": "0.0.0",
   "cpu": [
-    "ia32"
+    "wasm32"
   ],
-  "main": "node_bindings.win32-ia32-msvc.node",
+  "main": "node_bindings.wasi.cjs",
   "files": [
-    "node_bindings.win32-ia32-msvc.node"
+    "node_bindings.wasm32-wasi.wasm",
+    "node_bindings.wasi.cjs",
+    "node_bindings.wasi-browser.js",
+    "wasi-worker.mjs",
+    "wasi-worker-browser.mjs"
   ],
   "keywords": [
     "magic-string",
@@ -15,7 +19,7 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">= 10"
+    "node": ">=14.0.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -24,7 +28,8 @@
   },
   "repository": "https://github.com/hai-x/fast-magic-string",
   "bugs": "https://github.com/hai-x/fast-magic-string/issues",
-  "os": [
-    "win32"
-  ]
+  "browser": "node_bindings.wasi-browser.js",
+  "dependencies": {
+    "@napi-rs/wasm-runtime": "^0.2.6"
+  }
 }

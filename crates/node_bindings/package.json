@@ -3,6 +3,13 @@
   "version": "0.0.0",
   "main": "index.js",
   "types": "index.d.ts",
+  "files": [
+    "*.node",
+    "index.js",
+    "index.d.ts"
+  ],
+  "repository": "https://github.com/hai-x/fast-magic-string",
+  "bugs": "https://github.com/hai-x/fast-magic-string/issues",
   "keywords": [
     "magic-string",
     "napi",
@@ -10,32 +17,39 @@
   ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "napi": {
-    "name": "fms_node_bindings",
-    "triples": {
-      "additional": [
-        "aarch64-apple-darwin",
-        "aarch64-linux-android",
-        "aarch64-unknown-linux-gnu",
-        "aarch64-unknown-linux-musl",
-        "aarch64-pc-windows-msvc",
-        "armv7-unknown-linux-gnueabihf",
-        "armv7-unknown-linux-musleabihf",
-        "x86_64-unknown-linux-musl",
-        "x86_64-unknown-freebsd",
-        "i686-pc-windows-msvc",
-        "armv7-linux-androideabi",
-        "universal-apple-darwin",
-        "riscv64gc-unknown-linux-gnu"
-      ]
+    "binaryName": "node_bindings",
+    "targets": [
+      "x86_64-apple-darwin",
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "x86_64-unknown-freebsd",
+      "i686-pc-windows-msvc",
+      "armv7-unknown-linux-gnueabihf",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-apple-darwin",
+      "aarch64-unknown-linux-musl",
+      "aarch64-pc-windows-msvc",
+      "wasm32-wasip1-threads"
+    ],
+    "wasm": {
+      "initialMemory": 16384,
+      "browser": {
+        "fs": true
+      }
     }
   },
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "@napi-rs/cli": "^2.18.4"
+    "@napi-rs/cli": "^3.0.0-alpha.65",
+    "@napi-rs/wasm-runtime": "^0.2.4",
+    "@types/node": "22.8.7",
+    "emnapi": "^1.2.0"
   },
   "engines": {
     "node": ">= 10"
@@ -44,8 +58,22 @@
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm",
+    "create-npm-dirs": "napi create-npm-dirs",
     "universal": "napi universal",
     "version": "napi version"
+  },
+  "optionalDependencies": {
+    "fast-magic-string-darwin-x64": "workspace:*",
+    "fast-magic-string-win32-x64-msvc": "workspace:*",
+    "fast-magic-string-linux-x64-gnu": "workspace:*",
+    "fast-magic-string-linux-x64-musl": "workspace:*",
+    "fast-magic-string-freebsd-x64": "workspace:*",
+    "fast-magic-string-win32-ia32-msvc": "workspace:*",
+    "fast-magic-string-linux-arm-gnueabihf": "workspace:*",
+    "fast-magic-string-linux-arm64-gnu": "workspace:*",
+    "fast-magic-string-darwin-arm64": "workspace:*",
+    "fast-magic-string-linux-arm64-musl": "workspace:*",
+    "fast-magic-string-win32-arm64-msvc": "workspace:*",
+    "fast-magic-string-wasm32-wasi": "workspace:*"
   }
 }

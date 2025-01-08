@@ -1,0 +1,71 @@
+name: Publish Packages
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build bindings
+    uses: ./.github/workflows/build-bindings.yml
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v4
+        # Checkout pull request HEAD commit instead of merge commit
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: crates/node_bindings/artifacts
+      - name: create npm dirs
+        run: pnpm -C crates/node_bindings create-npm-dirs
+
+      - name: Move artifacts
+        run: pnpm -C crates/node_bindings artifacts
+
+      - name: List packages
+        run: ls -R crates/node_bindings/npm
+        shell: bash
+
+      - name: Set Publishing Config
+        run: pnpm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish(Dry Run)
+        run: |
+          pnpm publish -r --tag latest --dry-run --no-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish
+        run: |
+          pnpm publish -r --tag latest --no-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true

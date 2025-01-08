@@ -13,18 +13,7 @@
 //! owned strings. `concat_string!` accepts any number of arguments that implement `AsRef<str>` and
 //! creates a `String` with the appropriate capacity, without the need for format strings and their
 //! associated runtime overhead.
-//!
-//! # Example
-//!
-//! ```rust
-//! #[macro_use(concat_string)]
-//! extern crate concat_string;
-//!
-//! fn main() {
-//!   println!("{}", concat_string!("Hello", String::from(" "), "world"));
-//! }
-//! ```
-#[macro_export]
+///
 /// Concatenates a series of string slices into an owned string.
 ///
 /// This macro accepts zero or more arguments, where each argument implements `AsRef<str>`, and
@@ -34,17 +23,7 @@
 /// of converting its arguments. Because `concat_string` avoids format strings entirely, it can
 /// achieve a higher level of performance than using `format!` or other formatting utilities that
 /// return a `String`.
-///
-/// # Example
-///
-/// ```rust
-/// #[macro_use(concat_string)]
-/// extern crate concat_string;
-///
-/// fn main() {
-///   println!("{}", concat_string!("Hello", String::from(" "), "world"));
-/// }
-/// ```
+#[macro_export]
 macro_rules! concat_string {
     () => { String::with_capacity(0) };
     ($($s:expr),+) => {{

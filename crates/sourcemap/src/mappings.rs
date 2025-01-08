@@ -182,12 +182,12 @@ pub fn encode_mappings(raw_mappings: &Mappings) -> Result<String, SourcemapError
       }
       line_s.push_str(&seg_s);
       if seg_idx != line.len() - 1 {
-        line_s.push_str(",");
+        line_s.push(',');
       }
     }
     s.push_str(&line_s);
     if line_idx != raw_mappings.len() - 1 {
-      s.push_str(";");
+      s.push(';');
     }
   }
   Ok(s)
