@@ -1,6 +1,6 @@
 {
   "name": "fast-magic-string-wasm32-wasi",
-  "version": "0.0.0",
+  "version": "0.0.5",
   "cpu": [
     "wasm32"
   ],
