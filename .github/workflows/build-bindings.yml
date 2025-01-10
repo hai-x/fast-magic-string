@@ -9,10 +9,6 @@ env:
   MACOSX_DEPLOYMENT_TARGET: '10.13'
   CARGO_INCREMENTAL: '1'
 
-permissions:
-  contents: write
-  id-token: write
-
 jobs:
   build:
     strategy:
