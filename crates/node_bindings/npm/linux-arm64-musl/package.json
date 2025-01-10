@@ -1,6 +1,6 @@
 {
   "name": "fast-magic-string-linux-arm64-musl",
-  "version": "0.0.0",
+  "version": "0.0.6-alpha.4",
   "cpu": [
     "arm64"
   ],
